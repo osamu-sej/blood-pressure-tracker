@@ -1,5 +1,5 @@
 /* Service worker: offline app-shell caching. No external network dependency (§12). */
-const CACHE_NAME = 'bp-tracker-v2';
+const CACHE_NAME = 'bp-tracker-v3';
 const PRECACHE_URLS = [
   './',
   './index.html',
