@@ -16,13 +16,15 @@ App.SettingsScreen = (function () {
   }
 
   async function handleExportJSON() {
-    App.Storage.exportJSON(App.Main.getData());
-    App.UI.showToast('JSONをエクスポートしました', 'success');
+    const result = await App.Storage.exportJSON(App.Main.getData());
+    if (result === 'cancelled') return;
+    App.UI.showToast(result === 'shared' ? '共有メニューから送信先を選んでください' : 'JSONをエクスポートしました', 'success');
   }
 
   async function handleExportCSV() {
-    App.Storage.exportCSV(App.Main.getRecords());
-    App.UI.showToast('CSVをエクスポートしました', 'success');
+    const result = await App.Storage.exportCSV(App.Main.getRecords());
+    if (result === 'cancelled') return;
+    App.UI.showToast(result === 'shared' ? '共有メニューから送信先を選んでください' : 'CSVをエクスポートしました', 'success');
   }
 
   async function handleImportFile(e) {

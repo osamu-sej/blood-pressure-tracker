@@ -124,12 +124,29 @@ App.Storage = (function () {
     URL.revokeObjectURL(url);
   }
 
+  // On phones, sharing directly to Mail/Drive/AirDrop etc. is far less friction
+  // than "download then go find the file" — fall back to a plain download
+  // (e.g. on desktop browsers, or when the user cancels the share sheet).
+  async function shareOrDownload(filename, content, mime) {
+    const file = new File([content], filename, { type: mime });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file] });
+        return 'shared';
+      } catch (e) {
+        if (e && e.name === 'AbortError') return 'cancelled';
+      }
+    }
+    downloadFile(filename, content, mime);
+    return 'downloaded';
+  }
+
   function exportJSON(data) {
-    downloadFile('bp-tracker-backup-' + App.Util.todayStr() + '.json', toJSON(data), 'application/json');
+    return shareOrDownload('bp-tracker-backup-' + App.Util.todayStr() + '.json', toJSON(data), 'application/json');
   }
 
   function exportCSV(records) {
-    downloadFile('bp-tracker-' + App.Util.todayStr() + '.csv', toCSV(records), 'text/csv');
+    return shareOrDownload('bp-tracker-' + App.Util.todayStr() + '.csv', toCSV(records), 'text/csv');
   }
 
   // mode: 'merge' | 'replace'
