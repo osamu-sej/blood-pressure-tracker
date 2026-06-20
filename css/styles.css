@@ -525,13 +525,10 @@ table.print-table th, table.print-table td {
   color: #000;
 }
 table.print-table td.num { text-align: center; font-variant-numeric: tabular-nums; }
-table.print-table td.timing { text-align: center; }
-table.print-table td.memo { overflow-wrap: anywhere; word-break: break-word; }
+table.print-table th.divider-left, table.print-table td.divider-left { border-left: 1.2pt solid #000; }
 
-.col-date { width: 20mm; }
-.col-timing { width: 14mm; }
-.col-num { width: 18mm; }
-.col-memo { width: auto; }
+.col-date { width: 24mm; }
+.col-num { width: 16mm; }
 
 .print-page.fs-standard { font-size: 10pt; }
 .print-page.fs-compact { font-size: 9pt; }
@@ -540,7 +537,6 @@ table.print-table td.memo { overflow-wrap: anywhere; word-break: break-word; }
 .print-page.fs-min table.print-table td, .print-page.fs-min table.print-table th { padding: 1px 2px; }
 
 .print-page.no-autofit table.print-table { table-layout: auto; }
-.print-page.no-autofit table.print-table td.memo { overflow-wrap: normal; word-break: normal; white-space: nowrap; }
 
 .print-empty { color: var(--color-text-sub); }
 

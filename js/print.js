@@ -34,20 +34,33 @@ App.PrintScreen = (function () {
     document.getElementById('print-filter-end').value = filter.end;
   }
 
-  function getFilteredSorted() {
+  function getFiltered() {
     const all = App.Main.getRecords();
-    const filtered = all.filter((r) => {
+    return all.filter((r) => {
       if (filter.start && r.date < filter.start) return false;
       if (filter.end && r.date > filter.end) return false;
       return true;
     });
-    filtered.sort((a, b) => {
-      if (a.date !== b.date) {
-        return sortDir === 'asc' ? (a.date < b.date ? -1 : 1) : (a.date < b.date ? 1 : -1);
-      }
-      return a.createdAt < b.createdAt ? -1 : (a.createdAt > b.createdAt ? 1 : 0);
+  }
+
+  // One row per date with 朝/夜 side by side — print doesn't need a separate row
+  // per timing or a memo column, so collapse same-day records together. When a
+  // date has more than one record for the same timing (re-measurement), keep
+  // only the most recent (by createdAt), matching the today-card's own rule.
+  function groupByDate(records) {
+    const byDate = new Map();
+    records.forEach((r) => {
+      if (!byDate.has(r.date)) byDate.set(r.date, { date: r.date, morning: null, evening: null });
+      const group = byDate.get(r.date);
+      const current = group[r.timing];
+      if (!current || r.createdAt > current.createdAt) group[r.timing] = r;
     });
-    return filtered;
+    const groups = Array.from(byDate.values());
+    groups.sort((a, b) => {
+      if (a.date === b.date) return 0;
+      return sortDir === 'asc' ? (a.date < b.date ? -1 : 1) : (a.date < b.date ? 1 : -1);
+    });
+    return groups;
   }
 
   function periodLabel() {
@@ -75,27 +88,25 @@ App.PrintScreen = (function () {
     document.getElementById('print-meta-period').textContent = `期間: ${periodLabel()}`;
     document.getElementById('print-meta-issued').textContent = `出力日: ${App.Util.todayDisplayStr()}`;
 
-    const records = getFilteredSorted();
+    const groups = groupByDate(getFiltered());
     const tbody = document.getElementById('print-tbody');
     const table = document.getElementById('print-table');
     const emptyEl = document.getElementById('print-empty');
 
     tbody.innerHTML = '';
-    if (records.length === 0) {
+    if (groups.length === 0) {
       table.classList.add('hidden');
       emptyEl.classList.remove('hidden');
     } else {
       table.classList.remove('hidden');
       emptyEl.classList.add('hidden');
-      records.forEach((r) => {
+      groups.forEach((g) => {
         const tr = document.createElement('tr');
+        const cell = (r, field) => (r ? `<td class="num">${r[field]}</td>` : '<td class="num">－</td>');
         tr.innerHTML = `
-          <td>${App.Util.displayDate(r.date)}</td>
-          <td class="timing">${r.timing === 'morning' ? '朝' : '夜'}</td>
-          <td class="num">${r.sbp}</td>
-          <td class="num">${r.dbp}</td>
-          <td class="num">${r.pr}</td>
-          <td class="memo">${App.Util.escapeHtml(r.memo)}</td>
+          <td>${App.Util.displayDate(g.date)}</td>
+          ${cell(g.morning, 'sbp')}${cell(g.morning, 'dbp')}${cell(g.morning, 'pr')}
+          ${(g.evening ? `<td class="num divider-left">${g.evening.sbp}</td>` : '<td class="num divider-left">－</td>')}${cell(g.evening, 'dbp')}${cell(g.evening, 'pr')}
         `;
         tbody.appendChild(tr);
       });

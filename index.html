@@ -168,9 +168,21 @@
       </header>
       <table class="print-table" id="print-table">
         <colgroup>
-          <col class="col-date"><col class="col-timing"><col class="col-num"><col class="col-num"><col class="col-num"><col class="col-memo">
+          <col class="col-date">
+          <col class="col-num"><col class="col-num"><col class="col-num">
+          <col class="col-num"><col class="col-num"><col class="col-num">
         </colgroup>
-        <thead><tr><th>日付</th><th>朝/夜</th><th>SBP</th><th>DBP</th><th>PR</th><th>メモ</th></tr></thead>
+        <thead>
+          <tr>
+            <th rowspan="2">日付</th>
+            <th colspan="3">朝</th>
+            <th colspan="3" class="divider-left">夜</th>
+          </tr>
+          <tr>
+            <th>SBP</th><th>DBP</th><th>PR</th>
+            <th class="divider-left">SBP</th><th>DBP</th><th>PR</th>
+          </tr>
+        </thead>
         <tbody id="print-tbody"></tbody>
       </table>
       <p id="print-empty" class="print-empty hidden">条件に合う記録がありません。</p>
