@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>血圧記録</title>
+<meta name="theme-color" content="#2563EB">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="血圧記録">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<header class="topbar no-print">
+  <h1 class="app-title">血圧記録</h1>
+  <nav class="topnav" aria-label="画面切替">
+    <button type="button" class="navbtn" data-screen="list" aria-current="page">一覧</button>
+    <button type="button" class="navbtn" data-screen="print">印刷</button>
+    <button type="button" class="navbtn" data-screen="settings">設定</button>
+  </nav>
+</header>
+
+<main id="app">
+
+  <section id="screen-list" class="screen active" aria-labelledby="list-heading">
+    <h2 id="list-heading" class="visually-hidden">一覧</h2>
+
+    <div class="today-card no-print">
+      <h3 class="today-card-title">今日の記録（<span id="today-date-label"></span>）</h3>
+      <div class="today-slots">
+        <button type="button" class="today-slot" data-timing="morning">
+          <span class="today-slot-icon" aria-hidden="true">☀️</span>
+          <span class="today-slot-label">朝</span>
+          <span class="today-slot-value" id="today-slot-morning-value">未入力</span>
+        </button>
+        <button type="button" class="today-slot" data-timing="evening">
+          <span class="today-slot-icon" aria-hidden="true">🌙</span>
+          <span class="today-slot-label">夜</span>
+          <span class="today-slot-value" id="today-slot-evening-value">未入力</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="list-toolbar no-print">
+      <div class="filter-group">
+        <label class="filter-label">開始日<input type="date" id="filter-start"></label>
+        <label class="filter-label">終了日<input type="date" id="filter-end"></label>
+      </div>
+      <div class="preset-group" role="group" aria-label="期間プリセット">
+        <button type="button" class="preset-btn" data-preset="week">今週</button>
+        <button type="button" class="preset-btn" data-preset="month">今月</button>
+        <button type="button" class="preset-btn" data-preset="1m">過去1ヶ月</button>
+        <button type="button" class="preset-btn" data-preset="3m">過去3ヶ月</button>
+        <button type="button" class="preset-btn" data-preset="all">全期間</button>
+      </div>
+      <p class="filter-error" id="filter-error" aria-live="polite"></p>
+      <button type="button" id="sort-toggle" class="btn-secondary">並び替え: 新しい順 ▼</button>
+    </div>
+
+    <p id="record-count" class="record-count"></p>
+    <p class="band-note">※色分けは目安であり診断ではありません。印刷では色を使用しません。</p>
+
+    <div class="table-wrap">
+      <table class="list-table" id="list-table">
+        <thead>
+          <tr><th>日付</th><th>朝/夜</th><th>SBP</th><th>DBP</th><th>PR</th><th>メモ</th><th class="actions-col">操作</th></tr>
+        </thead>
+        <tbody id="list-tbody"></tbody>
+      </table>
+    </div>
+
+    <div id="empty-state" class="empty-state hidden">
+      <p>まだ記録がありません。右下の＋から最初の記録を追加しましょう。</p>
+    </div>
+
+    <button type="button" id="fab-add" class="fab no-print" aria-label="記録を追加">＋</button>
+  </section>
+
+  <section id="screen-form" class="screen" aria-labelledby="form-heading">
+    <div class="sub-header no-print">
+      <button type="button" id="form-back" class="btn-secondary">← 戻る</button>
+      <h2 id="form-heading">記録</h2>
+    </div>
+
+    <form id="record-form" novalidate>
+      <div class="field">
+        <span class="field-group-label">朝・夜</span>
+        <div class="timing-toggle" role="radiogroup" aria-label="朝・夜">
+          <button type="button" class="timing-btn" data-timing="morning" role="radio" aria-checked="false">☀️ 朝</button>
+          <button type="button" class="timing-btn" data-timing="evening" role="radio" aria-checked="false">🌙 夜</button>
+        </div>
+        <p class="field-error" id="error-timing"></p>
+      </div>
+
+      <div class="field">
+        <div class="date-display-row" id="date-display-row">
+          <span class="date-display-text" id="date-display-text"></span>
+          <button type="button" id="date-change-toggle" class="link-btn">違う日付にする</button>
+        </div>
+        <label for="field-date" class="visually-hidden">日付</label>
+        <input type="date" id="field-date" required class="hidden">
+        <p class="field-error" id="error-date"></p>
+      </div>
+
+      <div id="numfield-sbp-container"></div>
+      <p class="field-error" id="error-sbp"></p>
+
+      <div id="numfield-dbp-container"></div>
+      <p class="field-error" id="error-dbp"></p>
+
+      <div id="numfield-pr-container"></div>
+      <p class="field-error" id="error-pr"></p>
+
+      <div class="field">
+        <label for="field-memo">メモ（任意）</label>
+        <textarea id="field-memo" rows="2"></textarea>
+      </div>
+    </form>
+
+    <div class="form-footer no-print">
+      <button type="button" id="record-delete" class="btn-danger hidden">この記録を削除</button>
+      <button type="submit" id="record-save" form="record-form" class="btn-primary btn-save">保存</button>
+    </div>
+  </section>
+
+  <section id="screen-print" class="screen" aria-labelledby="print-heading">
+    <div class="print-controls no-print">
+      <div class="print-controls-row">
+        <button type="button" id="print-back" class="btn-secondary">← 戻る</button>
+        <h2 id="print-heading">印刷プレビュー</h2>
+        <button type="button" id="print-now-btn" class="btn-primary">印刷する (Ctrl/⌘+P)</button>
+      </div>
+      <div class="filter-group">
+        <label class="filter-label">開始日<input type="date" id="print-filter-start"></label>
+        <label class="filter-label">終了日<input type="date" id="print-filter-end"></label>
+      </div>
+      <div class="preset-group" role="group" aria-label="印刷期間プリセット">
+        <button type="button" class="preset-btn" data-preset="week" data-target="print">今週</button>
+        <button type="button" class="preset-btn" data-preset="month" data-target="print">今月</button>
+        <button type="button" class="preset-btn" data-preset="1m" data-target="print">過去1ヶ月</button>
+        <button type="button" class="preset-btn" data-preset="3m" data-target="print">過去3ヶ月</button>
+        <button type="button" class="preset-btn" data-preset="all" data-target="print">全期間</button>
+      </div>
+      <p class="filter-error" id="print-filter-error" aria-live="polite"></p>
+      <label class="sort-select-label">並び順
+        <select id="print-sort-select">
+          <option value="asc">古い順（時系列）</option>
+          <option value="desc">新しい順</option>
+        </select>
+      </label>
+      <p id="print-pagenum-note" class="pagenum-note hidden">※ページ番号を表示するには、印刷ダイアログの詳細設定で「ヘッダーとフッター」をONにしてください。</p>
+    </div>
+
+    <div id="print-page" class="print-page">
+      <header class="print-header">
+        <h1>血圧記録</h1>
+        <div class="print-meta">
+          <span id="print-meta-name"></span>
+          <span id="print-meta-period"></span>
+          <span id="print-meta-issued"></span>
+        </div>
+      </header>
+      <table class="print-table" id="print-table">
+        <colgroup>
+          <col class="col-date"><col class="col-timing"><col class="col-num"><col class="col-num"><col class="col-num"><col class="col-memo">
+        </colgroup>
+        <thead><tr><th>日付</th><th>朝/夜</th><th>SBP</th><th>DBP</th><th>PR</th><th>メモ</th></tr></thead>
+        <tbody id="print-tbody"></tbody>
+      </table>
+      <p id="print-empty" class="print-empty hidden">条件に合う記録がありません。</p>
+    </div>
+  </section>
+
+  <section id="screen-settings" class="screen" aria-labelledby="settings-heading">
+    <div class="sub-header no-print">
+      <button type="button" id="settings-back" class="btn-secondary">← 戻る</button>
+      <h2 id="settings-heading">設定</h2>
+    </div>
+
+    <div class="settings-body">
+      <div class="field">
+        <label for="setting-name">氏名（印刷ヘッダー表示用・任意）</label>
+        <input type="text" id="setting-name">
+      </div>
+
+      <div class="field">
+        <label for="setting-fontsize">印刷文字サイズ</label>
+        <select id="setting-fontsize">
+          <option value="standard">標準（10pt）</option>
+          <option value="compact">コンパクト（9pt）</option>
+          <option value="min">最小（8pt）</option>
+        </select>
+      </div>
+
+      <div class="field-checkbox">
+        <label><input type="checkbox" id="setting-pagenum"> ページ番号を表示する</label>
+      </div>
+
+      <div class="field-checkbox">
+        <label><input type="checkbox" id="setting-autofit"> ページ幅自動フィット</label>
+      </div>
+
+      <div class="field">
+        <label for="setting-defaultsort">一覧の並び順（既定）</label>
+        <select id="setting-defaultsort">
+          <option value="desc">新しい順</option>
+          <option value="asc">古い順</option>
+        </select>
+      </div>
+
+      <hr>
+      <h3>データのバックアップ</h3>
+      <p class="settings-hint">ブラウザのデータ削除でlocalStorageの記録は失われます。定期的にエクスポートしてください。</p>
+      <div class="settings-actions">
+        <button type="button" id="export-json-btn" class="btn-secondary">JSONでエクスポート（完全バックアップ）</button>
+        <button type="button" id="export-csv-btn" class="btn-secondary">CSVでエクスポート（Excel互換）</button>
+      </div>
+      <div class="settings-actions">
+        <label for="import-file-input" class="btn-secondary file-label">JSONをインポートして復元</label>
+        <input type="file" id="import-file-input" accept="application/json,.json" class="visually-hidden">
+      </div>
+
+      <hr>
+      <h3 class="danger-zone-title">データの全削除</h3>
+      <p class="settings-hint">この操作は元に戻せません。事前にエクスポートすることを推奨します。</p>
+      <button type="button" id="delete-all-btn" class="btn-danger">すべての記録を削除する</button>
+    </div>
+  </section>
+
+</main>
+
+<div id="toast-container" class="toast-container no-print" aria-live="polite"></div>
+<div id="modal-root" class="no-print"></div>
+
+<script src="js/util.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/validation.js"></script>
+<script src="js/toast.js"></script>
+<script src="js/numberPicker.js"></script>
+<script src="js/list.js"></script>
+<script src="js/form.js"></script>
+<script src="js/print.js"></script>
+<script src="js/settings.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
